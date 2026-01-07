@@ -30,7 +30,11 @@ yarn-error.log*
 
 # env files
 .env*.local
+.env
 .dev.vars
+
+# mcp config
+.mcp.json
 
 # vercel
 .vercel
