@@ -1,0 +1,91 @@
+{
+  "name": "Tool - List Todos",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "http-list",
+      "name": "HTTP Request - List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://simple-todo-list-blush.vercel.app/api/todos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "tdn934hf347f93h4"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_identifier",
+              "value": "={{ $json.query.user_identifier }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\nif (response.success && response.data) {\n  const todos = response.data;\n  if (todos.length === 0) {\n    return [{ json: { result: JSON.stringify({ tasks: [], message: \"No tasks found\" }) } }];\n  }\n  \n  const tasks = todos.map((t, i) => ({\n    position: i + 1,\n    id: t.id,\n    title: t.title,\n    completed: t.completed\n  }));\n  \n  return [{ json: { result: JSON.stringify({ tasks, message: \"Tasks retrieved successfully\" }) } }];\n}\n\nreturn [{ json: { result: JSON.stringify({ tasks: [], message: \"Failed to fetch tasks\" }) } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - List": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

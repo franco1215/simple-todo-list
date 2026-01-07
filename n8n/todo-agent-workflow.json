@@ -1,0 +1,625 @@
+{
+  "name": "Todo List AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "todo-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "034fb890-b570-468d-a8bf-9b06e75ea091",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        160
+      ],
+      "webhookId": "todo-agent-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "={{ 'You are a todo list assistant for user_identifier: ' + $json.body.user_identifier + '\\n\\nYOU MUST USE TOOLS FOR EVERY REQUEST. DO NOT RESPOND WITHOUT CALLING A TOOL FIRST.\\n\\nAvailable tools:\\n- list_todos: Get all tasks with their IDs\\n- create_todo: Create a new task\\n- update_todo: Update a task (requires ID from list_todos)\\n- delete_todo: Delete a task (requires ID from list_todos)\\n\\nWhen user refers to tasks by position (first, second, third, last):\\n1. FIRST call list_todos to get the task IDs\\n2. THEN call update_todo or delete_todo with the correct ID\\n\\nNEVER respond saying you did something without actually calling the tool.\\nNEVER make up or guess task IDs.\\nFormat output: ✅ done, ⬜ pending. Hide UUIDs from user.' }}",
+          "maxIterations": 10,
+          "returnIntermediateSteps": true
+        }
+      },
+      "id": "c084457a-4959-43df-8ec6-156105be3bd5",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -272,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "name": "list_todos",
+        "description": "ALWAYS call this first to get task IDs before updating or deleting. Returns tasks with id, title, completed, position.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "83L5ycGOgznjUcH3"
+        },
+        "specifyInputSchema": true,
+        "jsonSchemaExample": "{\n  \"user_identifier\": \"required\"\n}"
+      },
+      "id": "9b7f4ce9-6508-40a4-b5f0-d6c13645495c",
+      "name": "List Todos Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "name": "create_todo",
+        "description": "Create a new task. Call this when user wants to add a task.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "DTOe1c3MHHxEOfqh"
+        },
+        "specifyInputSchema": true,
+        "jsonSchemaExample": "{\n  \"title\": \"task name\",\n  \"user_identifier\": \"required\"\n}"
+      },
+      "id": "3a8cfa70-cae5-4d7a-8d42-434b66daf1fc",
+      "name": "Create Todo Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "name": "update_todo",
+        "description": "Update a task title or mark complete/incomplete. Get the id from list_todos first.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "l0KyHTWQbwIj6GRq"
+        },
+        "specifyInputSchema": true,
+        "jsonSchemaExample": "{\n  \"id\": \"uuid from list_todos\",\n  \"title\": \"new title\",\n  \"completed\": true,\n  \"user_identifier\": \"required\"\n}"
+      },
+      "id": "2568e225-29e6-445f-acbaf-f7855b308acd",
+      "name": "Update Todo Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "name": "delete_todo",
+        "description": "Delete a task. Get the id from list_todos first.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bO7DbHnkodkXnvCj"
+        },
+        "specifyInputSchema": true,
+        "jsonSchemaExample": "{\n  \"id\": \"uuid from list_todos\",\n  \"user_identifier\": \"required\"\n}"
+      },
+      "id": "b5df1b6a-280a-453d-b7fd-d97b55eed200",
+      "name": "Delete Todo Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ output: $json.output }) }}",
+        "options": {}
+      },
+      "id": "786e9a53-7dd7-49be-bdc1-bf7a4b19aae3",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-20250514",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        368
+      ],
+      "id": "70c10063-0280-404e-81fd-c09157cb63cb",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "vqMEZtO8FGA8Ou9k",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.user_identifier }}",
+        "contextWindowLength": 20
+      },
+      "id": "redis-memory",
+      "name": "Redis Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        368
+      ],
+      "credentials": {
+        "redis": {
+          "id": "5RbTRfwQ8N9H9X4f",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "whatsapp-webhook",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        -128
+      ],
+      "webhookId": "7f5ac3e9-c240-4ba0-9575-0f0550d87d9f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.body?.data?.key?.fromMe }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "2",
+              "leftValue": "={{ ($json.body?.data?.message?.conversation || $json.body?.data?.message?.extendedTextMessage?.text || '').toLowerCase() }}",
+              "rightValue": "#to-do list",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-whatsapp",
+      "name": "Filter WhatsApp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "body.message",
+              "value": "={{ ($json.body?.data?.message?.conversation || $json.body?.data?.message?.extendedTextMessage?.text || '').replace(/^#to-do list\\s*/i, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "body.user_identifier",
+              "value": "={{ $json.body?.data?.key?.remoteJid.replace('@s.whatsapp.net', '').replace('+', '') }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "body.source",
+              "value": "whatsapp",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "body.remoteJid",
+              "value": "={{ $json.body?.data?.key?.remoteJid }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "transform-whatsapp",
+      "name": "Transform WhatsApp",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "body.message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "body.user_identifier",
+              "value": "={{ $json.body.user_identifier }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "body.source",
+              "value": "web",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "transform-web",
+      "name": "Transform Web",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -432,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "1",
+                    "leftValue": "={{ $json.body.source }}",
+                    "rightValue": "web",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "singleValue": true
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "1",
+                    "leftValue": "={{ $json.body.source }}",
+                    "rightValue": "whatsapp",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "singleValue": true
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "route-response",
+      "name": "Route Response",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        176,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://quietmovingspectacledbear-evolution.cloudfy.live/message/sendText/todo",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "OhsP8IcQdhelq1ymxHBfMPVrx6MRSa8r"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.body?.remoteJid, text: $json.output }) }}",
+        "options": {}
+      },
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "body.source",
+              "value": "={{ $if($('Transform WhatsApp').isExecuted, $('Transform WhatsApp').item.json.body.source, $('Transform Web').item.json.body.source) }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "body.remoteJid",
+              "value": "={{ $if($('Transform WhatsApp').isExecuted, $('Transform WhatsApp').item.json.body.remoteJid, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-response",
+      "name": "Prepare Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        16,
+        160
+      ]
+    }
+  ],
+  "connections": {
+    "List Todos Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Todo Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Todo Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Todo Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Transform WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Transform Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Web": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response": {
+      "main": [
+        [
+          {
+            "node": "Route Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}
